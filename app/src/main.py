@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
+from .routes import inventario
 
 # Crear la aplicación FastAPI
 app = FastAPI(
@@ -31,6 +32,9 @@ async def verificar_estado():
         "version": "1.0.0",
         "nombre": "Sistema Administrativo APS"
     }
+
+# Incluir las rutas de inventario
+app.include_router(inventario.router)
 
 if __name__ == "__main__":
     import uvicorn
