@@ -3,6 +3,11 @@ from typing import AsyncGenerator
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.pool import StaticPool
 import os
+import logging
+
+# Configurar los registros de SQLAlchemy para reducir la verbosidad
+logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)
+logging.getLogger('sqlalchemy.pool').setLevel(logging.WARNING)
 
 # Obtener la ruta absoluta al directorio actual
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -14,7 +19,7 @@ engine = create_async_engine(
     SQLALCHEMY_DATABASE_URL,
     connect_args={"check_same_thread": False},
     poolclass=StaticPool,
-    echo=True
+    echo=False
 )
 
 # Crear la sesión asíncrona
