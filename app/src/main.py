@@ -1,9 +1,11 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse
 from pathlib import Path
-from .routes import inventario, remisiones
+from .routes import inventario, remisiones, auth
 from .models.database import create_tables, engine, Base
+from .routes.auth import obtener_usuario_actual
 import asyncio
 
 # Crear la aplicación FastAPI
@@ -26,10 +28,24 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 # Ruta principal
 @app.get("/")
-async def pagina_principal(request: Request):
+async def pagina_principal(
+    request: Request
+):
+    try:
+        usuario = await obtener_usuario_actual(request)
+        return templates.TemplateResponse(
+            "index.html",
+            {"request": request, "titulo": "Bienvenido al Sistema APS", "usuario": usuario}
+        )
+    except Exception:
+        return RedirectResponse(url="/login")
+
+# Ruta de login
+@app.get("/login")
+async def login(request: Request):
     return templates.TemplateResponse(
-        "index.html",
-        {"request": request, "titulo": "Bienvenido al Sistema APS"}
+        "login.html", 
+        {"request": request, "titulo": "Iniciar Sesión"}
     )
 
 # Verificación del estado de la API
@@ -41,9 +57,10 @@ async def verificar_estado():
         "nombre": "Sistema Administrativo APS"
     }
 
-# Incluir las rutas de inventario y remisiones
+# Incluir las rutas de inventario, remisiones y autenticación
 app.include_router(inventario.router)
 app.include_router(remisiones.router)
+app.include_router(auth.router, prefix="/auth", tags=["autenticación"])
 
 if __name__ == "__main__":
     import uvicorn

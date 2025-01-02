@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ titulo }} - Sistema APS</title>
+    <link href="/static/css/output.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+    <header class="bg-blue-600 text-white p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold">Sistema Administrativo APS</h1>
+            {% if usuario %}
+            <div class="flex items-center space-x-4">
+                <span>{{ usuario.nombre }} {{ usuario.apellido_paterno }}</span>
+                <a href="/auth/logout" class="bg-red-500 hover:bg-red-600 px-3 py-2 rounded">Cerrar Sesión</a>
+            </div>
+            {% else %}
+            <a href="/login" class="bg-blue-700 hover:bg-blue-800 px-3 py-2 rounded">Iniciar Sesión</a>
+            {% endif %}
+        </div>
+    </header>
+
+    <main class="container mx-auto flex-grow p-4">
+        {% block contenido %}{% endblock %}
+    </main>
+
+    <footer class="bg-gray-200 p-4 text-center">
+        <p>&copy; 2023 Asilo Perpetuo Socorro. Todos los derechos reservados.</p>
+    </footer>
+</body>
+</html>
