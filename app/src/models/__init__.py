@@ -1,4 +1,4 @@
-from .database import Base, engine, get_db, create_tables
+from .database import Base, engine_sync as engine, get_db, create_tables
 from .colaboradores import Colaborador, TipoColaborador
 from .residentes import Residente, TipoSangre, EstadoResidente
 from .inventario import Producto, MovimientoInventario, CategoriaProducto, UnidadMedida

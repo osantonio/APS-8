@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block contenido %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6">Panel de Control</h1>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="bg-white shadow-md rounded-lg p-6">
+            <h2 class="text-xl font-semibold mb-4">Información de Usuario</h2>
+            <p><strong>Nombre:</strong> {{ usuario.nombre }} {{ usuario.apellido }}</p>
+            <p><strong>Correo:</strong> {{ usuario.correo }}</p>
+            <p><strong>Rol:</strong> {{ usuario.rol.value }}</p>
+        </div>
+        
+        <div class="bg-white shadow-md rounded-lg p-6">
+            <h2 class="text-xl font-semibold mb-4">Acciones Rápidas</h2>
+            <ul class="space-y-2">
+                <li><a href="#" class="text-blue-600 hover:underline">Ver Perfil</a></li>
+                <li><a href="#" class="text-blue-600 hover:underline">Configuraciones</a></li>
+                <li><a href="/logout" class="text-red-600 hover:underline">Cerrar Sesión</a></li>
+            </ul>
+        </div>
+        
+        <div class="bg-white shadow-md rounded-lg p-6">
+            <h2 class="text-xl font-semibold mb-4">Resumen</h2>
+            <p>Bienvenido a tu panel de control. Aquí podrás gestionar tus actividades y acceder a diferentes secciones de la aplicación.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

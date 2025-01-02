@@ -3,23 +3,28 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
 from pathlib import Path
-from .routes import inventario, remisiones, auth
-from .models.database import create_tables, engine, Base
+from contextlib import asynccontextmanager
+from .routes import inventario, remisiones, auth, dashboard
+from .models.database import create_tables, engine_async as engine, Base
 from .routes.auth import obtener_usuario_actual
 import asyncio
+
+# Contexto de ciclo de vida de la aplicación
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Inicializar base de datos al inicio
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    yield
+    # Cualquier limpieza necesaria al apagar la aplicación puede ir aquí
 
 # Crear la aplicación FastAPI
 app = FastAPI(
     title="APS - Sistema Administrativo",
     description="Sistema de gestión para el Asilo Perpetuo Socorro",
-    version="0.8.0"
+    version="0.8.0",
+    lifespan=lifespan
 )
-
-# Inicializar base de datos al inicio
-@app.on_event("startup")
-async def startup_event():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
 
 # Configurar archivos estáticos y templates
 BASE_DIR = Path(__file__).resolve().parent
@@ -33,12 +38,14 @@ async def pagina_principal(
 ):
     try:
         usuario = await obtener_usuario_actual(request)
+        # Si el usuario está autenticado, redirigir al dashboard
+        return RedirectResponse(url="/dashboard")
+    except Exception:
+        # Si no hay usuario autenticado, mostrar página principal
         return templates.TemplateResponse(
             "index.html",
-            {"request": request, "titulo": "Bienvenido al Sistema APS", "usuario": usuario}
+            {"request": request, "titulo": "Bienvenido al Sistema APS"}
         )
-    except Exception:
-        return RedirectResponse(url="/login")
 
 # Ruta de login
 @app.get("/login")
@@ -57,10 +64,11 @@ async def verificar_estado():
         "nombre": "Sistema Administrativo APS"
     }
 
-# Incluir las rutas de inventario, remisiones y autenticación
+# Incluir las rutas de inventario, remisiones, autenticación y dashboard
 app.include_router(inventario.router)
 app.include_router(remisiones.router)
 app.include_router(auth.router, prefix="/auth", tags=["autenticación"])
+app.include_router(dashboard.router, tags=["dashboard"])
 
 if __name__ == "__main__":
     import uvicorn

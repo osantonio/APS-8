@@ -1,49 +1,43 @@
 import sys
 import os
-
-# Agregar el directorio padre al path para importaciones
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from src.models.database import Base
-import os
-
-# Crear motor de base de datos
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-DB_PATH = os.path.join(BASE_DIR, 'app', 'src', 'aps.db')
-SQLALCHEMY_DATABASE_URL = f"sqlite:///{DB_PATH}"
-
-# Asegurar que el directorio exista
-os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-
-engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# Importar Base para crear tablas si no existen
-from src.models.database import Base
-Base.metadata.create_all(bind=engine)
-
-from src.models.colaboradores import Colaborador, RolAcceso, TipoColaborador
+import traceback
 from datetime import date
 
+# Obtener la ruta absoluta del directorio raíz del proyecto
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.insert(0, PROJECT_ROOT)
+
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import inspect
+from src.models.database import engine_sync, Base, DB_PATH
+from src.models.colaboradores import Colaborador, RolAcceso, TipoColaborador
+
+# Configurar logging
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Crear sesión local
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine_sync)
+
 def crear_usuario_admin():
-    # Imprimir información de depuración
-    print(f"Ruta de la base de datos: {DB_PATH}")
-    print(f"Directorio base: {BASE_DIR}")
-    print(f"Contenido del directorio: {os.listdir(os.path.dirname(DB_PATH))}")
-    
     # Crear sesión de base de datos
     db = SessionLocal()
     
     try:
+        # Listar todos los usuarios existentes
+        usuarios_existentes = db.query(Colaborador).all()
+        logger.info(f"Usuarios existentes: {len(usuarios_existentes)}")
+        for usuario in usuarios_existentes:
+            logger.info(f"Usuario: {usuario.nombre} {usuario.apellido_paterno}, Correo: {usuario.correo}, Rol: {usuario.rol}")
+        
         # Verificar si ya existe un admin
         admin_existente = db.query(Colaborador).filter(
             Colaborador.rol == RolAcceso.ADMIN
         ).first()
         
         if admin_existente:
-            print("Ya existe un usuario administrador.")
+            logger.info("Ya existe un usuario administrador.")
             return
         
         # Crear nuevo usuario admin
@@ -66,15 +60,31 @@ def crear_usuario_admin():
         
         db.add(nuevo_admin)
         db.commit()
-        print("Usuario administrador creado exitosamente.")
+        logger.info("Usuario administrador creado exitosamente.")
     
     except Exception as e:
         db.rollback()
-        print(f"Error al crear usuario administrador: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f"Error al crear usuario administrador: {e}")
+        logger.error(traceback.format_exc())
     finally:
         db.close()
 
+def verificar_tablas():
+    # Verificar las tablas existentes
+    inspector = inspect(engine_sync)
+    tablas = inspector.get_table_names()
+    logger.info(f"Tablas existentes: {tablas}")
+
 if __name__ == "__main__":
+    # Información de depuración
+    logger.info(f"Ruta de la base de datos: {DB_PATH}")
+    logger.info(f"Directorio de la base de datos existe: {os.path.exists(DB_PATH.parent)}")
+    
+    # Crear tablas si no existen
+    Base.metadata.create_all(bind=engine_sync)
+    
+    # Verificar tablas
+    verificar_tablas()
+    
+    # Crear usuario admin
     crear_usuario_admin()
