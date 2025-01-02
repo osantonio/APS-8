@@ -1,0 +1,17 @@
+{
+  "name": "aps-admin-system",
+  "version": "1.0.0",
+  "description": "Sistema de Gestión Administrativa para Asilo Perpetuo Socorro",
+  "scripts": {
+    "tailwind:build": "tailwindcss -i ./app/src/static/css/input.css -o ./app/src/static/css/output.css",
+    "tailwind:watch": "tailwindcss -i ./app/src/static/css/input.css -o ./app/src/static/css/output.css --watch"
+  },
+  "dependencies": {
+    "daisyui": "^3.9.4"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17"
+  }
+}

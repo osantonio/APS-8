@@ -1,5 +1,8 @@
 from fastapi import APIRouter, HTTPException, Depends, status
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 from sqlalchemy.orm import Session
+from sqlalchemy import update
 from typing import List, Optional
 from ..models.database import get_db
 from ..models.inventario import (
@@ -138,15 +141,15 @@ class SuministroUpdate(BaseModel):
 
 # Endpoints para Productos
 @router.post("/productos/", response_model=ProductoBase, status_code=status.HTTP_201_CREATED)
-async def crear_producto(producto: ProductoCreate, db: Session = Depends(get_db)):
+async def crear_producto(producto: ProductoCreate, db: AsyncSession = Depends(get_db)):
     db_producto = Producto(**producto.dict())
     db.add(db_producto)
     try:
-        db.commit()
-        db.refresh(db_producto)
+        await db.commit()
+        await db.refresh(db_producto)
         return db_producto
     except Exception as e:
-        db.rollback()
+        await db.rollback()
         raise HTTPException(
             status_code=400,
             detail=f"Error al crear el producto: {str(e)}"
@@ -157,16 +160,17 @@ async def listar_productos(
     skip: int = 0,
     limit: int = 100,
     categoria: Optional[CategoriaProducto] = None,
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
-    query = db.query(Producto)
+    query = await db.execute(select(Producto))
     if categoria:
-        query = query.filter(Producto.categoria == categoria)
-    return query.offset(skip).limit(limit).all()
+        query = await db.execute(select(Producto).filter(Producto.categoria == categoria))
+    return query.scalars().all()
 
 @router.get("/productos/{producto_id}", response_model=ProductoBase)
-async def obtener_producto(producto_id: int, db: Session = Depends(get_db)):
-    producto = db.query(Producto).filter(Producto.id == producto_id).first()
+async def obtener_producto(producto_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Producto).filter(Producto.id == producto_id))
+    producto = result.scalar_one_or_none()
     if producto is None:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
     return producto
@@ -175,9 +179,10 @@ async def obtener_producto(producto_id: int, db: Session = Depends(get_db)):
 async def actualizar_producto(
     producto_id: int,
     producto_update: ProductoUpdate,
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
-    db_producto = db.query(Producto).filter(Producto.id == producto_id).first()
+    result = await db.execute(select(Producto).filter(Producto.id == producto_id))
+    db_producto = result.scalar_one_or_none()
     if db_producto is None:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
     
@@ -186,27 +191,28 @@ async def actualizar_producto(
         setattr(db_producto, field, value)
     
     try:
-        db.commit()
-        db.refresh(db_producto)
+        await db.commit()
+        await db.refresh(db_producto)
         return db_producto
     except Exception as e:
-        db.rollback()
+        await db.rollback()
         raise HTTPException(
             status_code=400,
             detail=f"Error al actualizar el producto: {str(e)}"
         )
 
 @router.delete("/productos/{producto_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def eliminar_producto(producto_id: int, db: Session = Depends(get_db)):
-    producto = db.query(Producto).filter(Producto.id == producto_id).first()
+async def eliminar_producto(producto_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Producto).filter(Producto.id == producto_id))
+    producto = result.scalar_one_or_none()
     if producto is None:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
     
     try:
-        db.delete(producto)
-        db.commit()
+        await db.delete(producto)
+        await db.commit()
     except Exception as e:
-        db.rollback()
+        await db.rollback()
         raise HTTPException(
             status_code=400,
             detail=f"Error al eliminar el producto: {str(e)}"
@@ -214,9 +220,10 @@ async def eliminar_producto(producto_id: int, db: Session = Depends(get_db)):
 
 # Endpoints para Movimientos de Inventario
 @router.post("/movimientos/", response_model=MovimientoBase, status_code=status.HTTP_201_CREATED)
-async def registrar_movimiento(movimiento: MovimientoCreate, db: Session = Depends(get_db)):
+async def registrar_movimiento(movimiento: MovimientoCreate, db: AsyncSession = Depends(get_db)):
     # Verificar que el producto existe
-    producto = db.query(Producto).filter(Producto.id == movimiento.producto_id).first()
+    result = await db.execute(select(Producto).filter(Producto.id == movimiento.producto_id))
+    producto = result.scalar_one_or_none()
     if not producto:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
     
@@ -224,8 +231,7 @@ async def registrar_movimiento(movimiento: MovimientoCreate, db: Session = Depen
     db_movimiento = MovimientoInventario(**movimiento.dict())
     
     # Actualizar el stock del producto
-    from sqlalchemy import select
-    stock_actual = db.scalar(select(Producto.stock_actual).where(Producto.id == producto.id))
+    stock_actual = await db.scalar(select(Producto.stock_actual).where(Producto.id == producto.id))
     cantidad = movimiento.cantidad
     
     if movimiento.tipo_movimiento == "entrada":
@@ -239,18 +245,17 @@ async def registrar_movimiento(movimiento: MovimientoCreate, db: Session = Depen
         nuevo_stock = Decimal(str(stock_actual)) - cantidad
     
     # Actualizar el stock en la base de datos
-    db.query(Producto).filter(Producto.id == producto.id).update(
-        {"stock_actual": nuevo_stock},
-        synchronize_session="fetch"
+    await db.execute(
+        update(Producto).where(Producto.id == producto.id).values(stock_actual=nuevo_stock)
     )
     
     try:
         db.add(db_movimiento)
-        db.commit()
-        db.refresh(db_movimiento)
+        await db.commit()
+        await db.refresh(db_movimiento)
         return db_movimiento
     except Exception as e:
-        db.rollback()
+        await db.rollback()
         raise HTTPException(
             status_code=400,
             detail=f"Error al registrar el movimiento: {str(e)}"
@@ -262,20 +267,22 @@ async def listar_movimientos(
     limit: int = 100,
     producto_id: Optional[int] = None,
     tipo_movimiento: Optional[str] = None,
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
-    query = db.query(MovimientoInventario)
+    query = select(MovimientoInventario)
     if producto_id:
         query = query.filter(MovimientoInventario.producto_id == producto_id)
     if tipo_movimiento:
         query = query.filter(MovimientoInventario.tipo_movimiento == tipo_movimiento)
-    return query.offset(skip).limit(limit).all()
+    result = await db.execute(query.offset(skip).limit(limit))
+    return result.scalars().all()
 
 # Endpoints para Suministros
 @router.post("/suministros/", response_model=SuministroBase, status_code=status.HTTP_201_CREATED)
-async def crear_suministro(suministro: SuministroCreate, db: Session = Depends(get_db)):
+async def crear_suministro(suministro: SuministroCreate, db: AsyncSession = Depends(get_db)):
     # Verificar que el producto existe
-    producto = db.query(Producto).filter(Producto.id == suministro.producto_id).first()
+    result = await db.execute(select(Producto).filter(Producto.id == suministro.producto_id))
+    producto = result.scalar_one_or_none()
     if not producto:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
     
@@ -283,11 +290,11 @@ async def crear_suministro(suministro: SuministroCreate, db: Session = Depends(g
     
     try:
         db.add(db_suministro)
-        db.commit()
-        db.refresh(db_suministro)
+        await db.commit()
+        await db.refresh(db_suministro)
         return db_suministro
     except Exception as e:
-        db.rollback()
+        await db.rollback()
         raise HTTPException(
             status_code=400,
             detail=f"Error al crear el suministro: {str(e)}"
@@ -299,18 +306,20 @@ async def listar_suministros(
     limit: int = 100,
     producto_id: Optional[int] = None,
     estado: Optional[EstadoSuministro] = None,
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
-    query = db.query(Suministro)
+    query = select(Suministro)
     if producto_id:
         query = query.filter(Suministro.producto_id == producto_id)
     if estado:
         query = query.filter(Suministro.estado == estado)
-    return query.offset(skip).limit(limit).all()
+    result = await db.execute(query.offset(skip).limit(limit))
+    return result.scalars().all()
 
 @router.get("/suministros/{suministro_id}", response_model=SuministroBase)
-async def obtener_suministro(suministro_id: int, db: Session = Depends(get_db)):
-    suministro = db.query(Suministro).filter(Suministro.id == suministro_id).first()
+async def obtener_suministro(suministro_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Suministro).filter(Suministro.id == suministro_id))
+    suministro = result.scalar_one_or_none()
     if suministro is None:
         raise HTTPException(status_code=404, detail="Suministro no encontrado")
     return suministro
@@ -319,9 +328,10 @@ async def obtener_suministro(suministro_id: int, db: Session = Depends(get_db)):
 async def actualizar_suministro(
     suministro_id: int,
     suministro_update: SuministroUpdate,
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
-    db_suministro = db.query(Suministro).filter(Suministro.id == suministro_id).first()
+    result = await db.execute(select(Suministro).filter(Suministro.id == suministro_id))
+    db_suministro = result.scalar_one_or_none()
     if db_suministro is None:
         raise HTTPException(status_code=404, detail="Suministro no encontrado")
     
@@ -330,27 +340,28 @@ async def actualizar_suministro(
         setattr(db_suministro, field, value)
     
     try:
-        db.commit()
-        db.refresh(db_suministro)
+        await db.commit()
+        await db.refresh(db_suministro)
         return db_suministro
     except Exception as e:
-        db.rollback()
+        await db.rollback()
         raise HTTPException(
             status_code=400,
             detail=f"Error al actualizar el suministro: {str(e)}"
         )
 
 @router.delete("/suministros/{suministro_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def eliminar_suministro(suministro_id: int, db: Session = Depends(get_db)):
-    suministro = db.query(Suministro).filter(Suministro.id == suministro_id).first()
+async def eliminar_suministro(suministro_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Suministro).filter(Suministro.id == suministro_id))
+    suministro = result.scalar_one_or_none()
     if suministro is None:
         raise HTTPException(status_code=404, detail="Suministro no encontrado")
     
     try:
-        db.delete(suministro)
-        db.commit()
+        await db.delete(suministro)
+        await db.commit()
     except Exception as e:
-        db.rollback()
+        await db.rollback()
         raise HTTPException(
             status_code=400,
             detail=f"Error al eliminar el suministro: {str(e)}"

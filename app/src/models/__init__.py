@@ -2,7 +2,14 @@ from .database import Base, engine, get_db, create_tables
 from .colaboradores import Colaborador, TipoColaborador
 from .residentes import Residente, TipoSangre, EstadoResidente
 from .inventario import Producto, MovimientoInventario, CategoriaProducto, UnidadMedida
-from .remisiones import Remision, TipoRemision, EstadoRemision
+from .remisiones import (
+    Remision, 
+    TipoRemision, 
+    EstadoRemision, 
+    SeguimientoRemision, 
+    TipoEvento,
+    TrazabilidadProfesional
+)
 
 __all__ = [
     # Database
@@ -30,4 +37,7 @@ __all__ = [
     "Remision",
     "TipoRemision",
     "EstadoRemision",
+    "SeguimientoRemision",
+    "TipoEvento",
+    "TrazabilidadProfesional",
 ]

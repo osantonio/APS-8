@@ -7,3 +7,7 @@ python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 python-dotenv==1.0.0
 aiosqlite==0.19.0
+# Herramientas de frontend
+nodejs==18.18.0
+npm==9.5.1
+tailwindcss==3.3.5

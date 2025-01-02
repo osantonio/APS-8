@@ -2,7 +2,9 @@ from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
-from .routes import inventario
+from .routes import inventario, remisiones
+from .models.database import create_tables, engine, Base
+import asyncio
 
 # Crear la aplicación FastAPI
 app = FastAPI(
@@ -10,6 +12,12 @@ app = FastAPI(
     description="Sistema de gestión para el Asilo Perpetuo Socorro",
     version="0.8.0"
 )
+
+# Inicializar base de datos al inicio
+@app.on_event("startup")
+async def startup_event():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
 # Configurar archivos estáticos y templates
 BASE_DIR = Path(__file__).resolve().parent
@@ -33,8 +41,9 @@ async def verificar_estado():
         "nombre": "Sistema Administrativo APS"
     }
 
-# Incluir las rutas de inventario
+# Incluir las rutas de inventario y remisiones
 app.include_router(inventario.router)
+app.include_router(remisiones.router)
 
 if __name__ == "__main__":
     import uvicorn

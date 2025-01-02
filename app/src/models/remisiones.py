@@ -17,6 +17,14 @@ class EstadoRemision(enum.Enum):
     COMPLETADA = "completada"
     CANCELADA = "cancelada"
 
+class TipoEvento(enum.Enum):
+    SALIDA = "salida"
+    LLEGADA = "llegada"
+    CONSULTA = "consulta"
+    PROCEDIMIENTO = "procedimiento"
+    INCIDENCIA = "incidencia"
+    RETORNO = "retorno"
+
 class Remision(Base):
     __tablename__ = "remisiones"
 
@@ -68,3 +76,52 @@ class Remision(Base):
     
     # Relaciones
     residente = relationship("Residente", backref="remisiones")
+    eventos_seguimiento = relationship("SeguimientoRemision", back_populates="remision")
+
+class TrazabilidadProfesional(Base):
+    __tablename__ = "trazabilidad_profesionales"
+
+    id = Column(Integer, primary_key=True, index=True)
+    remision_id = Column(Integer, ForeignKey("remisiones.id"), nullable=False)
+    colaborador_id = Column(Integer, ForeignKey("colaboradores.id"), nullable=False)
+    
+    # Detalles de la participación
+    rol = Column(String(100), nullable=False)
+    fecha_intervencion = Column(DateTime(timezone=True), nullable=False)
+    descripcion_intervencion = Column(Text)
+    
+    # Documentación
+    notas = Column(Text)
+    documentos_generados = Column(Text)  # Lista de documentos generados
+    
+    # Relaciones
+    remision = relationship("Remision", back_populates="trazabilidad_profesionales")
+    colaborador = relationship("Colaborador", backref="trazabilidades_remisiones")
+
+class SeguimientoRemision(Base):
+    __tablename__ = "seguimiento_remisiones"
+
+    id = Column(Integer, primary_key=True, index=True)
+    remision_id = Column(Integer, ForeignKey("remisiones.id"), nullable=False)
+    tipo_evento = Column(Enum(TipoEvento), nullable=False)
+    
+    # Información del evento
+    fecha_hora = Column(DateTime(timezone=True), nullable=False)
+    ubicacion = Column(String(200))
+    descripcion = Column(Text)
+    
+    # Personal involucrado
+    responsable = Column(String(200))
+    
+    # Detalles adicionales
+    observaciones = Column(Text)
+    documentos_generados = Column(Text)  # Lista de documentos generados en este evento
+    
+    # Estado del evento
+    completado = Column(Boolean, default=False)
+    
+    # Relaciones
+    remision = relationship("Remision", back_populates="eventos_seguimiento")
+
+# Actualizar el modelo de Remision para incluir la nueva relación
+Remision.trazabilidad_profesionales = relationship("TrazabilidadProfesional", back_populates="remision")

@@ -1,51 +1,28 @@
-# Entornos virtuales
-venv/
-env/
-.env/
-.venv/
+# Dependencias de Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
 
-# Archivos de caché de Python
-__pycache__/
-*.py[cod]
-*$py.class
+# Archivos de compilación de Tailwind
+app/src/static/css/output.css
 
-# Archivos de base de datos
-*.sqlite
-*.db
-
-# Archivos de registro
-*.log
-
-# Archivos de configuración local
+# Archivos de caché y temporales
+.DS_Store
 .env
+.vscode/
+*.swp
+*.swo
+
+# Archivos de entorno
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
-# Archivos de dependencias
-*.egg-info/
-dist/
+# Directorios de construcción
 build/
+dist/
 
-# IDEs y editores
-.idea/
-.vscode/
-*.swp
-*.swo
-*~
-
-# Sistemas operativos
-.DS_Store
-Thumbs.db
-
-# Archivos de configuración de entorno
-.python-version
-/Hoja de ruta.md
-
-# Archivos de pruebas de coverage
-.coverage
-htmlcov/
-
-# Archivos de migraciones de base de datos
-alembic/versions/*.py
+# Logs
+logs
+*.log

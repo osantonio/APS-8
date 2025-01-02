@@ -1,57 +1,62 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ titulo }}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/css/output.css" rel="stylesheet">
 </head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-            <a class="navbar-brand" href="/">APS</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/colaboradores">Colaboradores</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/residentes">Residentes</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/inventario">Inventario</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/remisiones">Remisiones</a>
-                    </li>
+<body class="bg-base-100 text-base-content">
+    <nav class="navbar bg-primary text-primary-content">
+        <div class="navbar-start">
+            <a class="btn btn-ghost text-xl" href="/">APS</a>
+        </div>
+        <div class="navbar-center hidden lg:flex">
+            <ul class="menu menu-horizontal px-1">
+                <li><a href="/colaboradores">Colaboradores</a></li>
+                <li><a href="/residentes">Residentes</a></li>
+                <li><a href="/inventario">Inventario</a></li>
+                <li><a href="/remisiones">Remisiones</a></li>
+            </ul>
+        </div>
+        <div class="navbar-end">
+            <div class="dropdown dropdown-end lg:hidden">
+                <div tabindex="0" role="button" class="btn btn-ghost">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-5 h-5 stroke-current">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </div>
+                <ul tabindex="0" class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
+                    <li><a href="/colaboradores">Colaboradores</a></li>
+                    <li><a href="/residentes">Residentes</a></li>
+                    <li><a href="/inventario">Inventario</a></li>
+                    <li><a href="/remisiones">Remisiones</a></li>
                 </ul>
             </div>
         </div>
     </nav>
 
-    <main class="container mt-4">
-        <div class="jumbotron">
-            <h1 class="display-4">{{ titulo }}</h1>
-            <p class="lead">Sistema de Gestión Administrativa del Asilo Perpetuo Socorro</p>
-            <hr class="my-4">
-            <p>Este sistema permite gestionar todas las operaciones administrativas del centro, incluyendo:</p>
-            <ul>
-                <li>Gestión de colaboradores y turnos</li>
-                <li>Administración de residentes</li>
-                <li>Control de inventarios</li>
-                <li>Sistema de remisiones</li>
-            </ul>
+    <main class="container mx-auto mt-8 px-4">
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h1 class="card-title text-3xl mb-4">{{ titulo }}</h1>
+                <p class="text-lg mb-4">Sistema de Gestión Administrativa del Asilo Perpetuo Socorro</p>
+                <hr class="my-4 border-base-content/20">
+                <p class="mb-4">Este sistema permite gestionar todas las operaciones administrativas del centro, incluyendo:</p>
+                <ul class="list-disc list-inside space-y-2">
+                    <li>Gestión de colaboradores y turnos</li>
+                    <li>Administración de residentes</li>
+                    <li>Control de inventarios</li>
+                    <li>Sistema de remisiones</li>
+                </ul>
+            </div>
         </div>
     </main>
 
-    <footer class="container mt-5">
-        <hr>
-        <p class="text-center text-muted">© 2024 Asilo Perpetuo Socorro. Todos los derechos reservados.</p>
+    <footer class="footer footer-center p-4 bg-base-300 text-base-content mt-8">
+        <aside>
+            <p>© 2024 Asilo Perpetuo Socorro. Todos los derechos reservados.</p>
+        </aside>
     </footer>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

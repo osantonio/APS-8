@@ -1,32 +1,29 @@
-# Entorno virtual
-venv/
-
-# Archivos de Python
+# Dependencias de Python
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
+venv/
+.venv/
+env/
+.env/
 
-# Distribución / empaquetado
-dist/
-build/
-*.egg-info/
-
-# Entornos
-.env
-.env.local
-.env.*.local
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# Sistema operativo
-.DS_Store
-Thumbs.db
-
-# Logs y bases de datos
-*.log
+# Archivos de base de datos
 *.sqlite3
+
+# Archivos de registro
+*.log
+
+# Archivos de configuración local
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Archivos de compilación
+*.pyc
+*.pyo
+*.pyd
+
+# Directorios de entorno virtual
+venv/
+.venv/
